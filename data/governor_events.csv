@@ -1,0 +1,8 @@
+time_ist_recorded,time_utc_start,time_utc_end,system_state,max_cpu_pct,orchestrator_action,warm_pool_size,active_instances
+05:22 PM - 05:42 PM,2026-03-17T11:22:00Z,2026-03-17T11:42:00Z,Baseline idle,0.20,Standby (cost optimised),0,1
+05:43 PM,2026-03-17T11:43:00Z,,Load test initiated,29.90,Phase 2: pre-warming triggered,0 -> 2,1
+05:44 PM,2026-03-17T11:44:00Z,,Traffic spike max,50.10,Phase 3: mitigation triggered,2 -> 0,1 -> 2
+05:45 PM,2026-03-17T11:45:00Z,,Spike mitigated,49.90,MaxGroupPreparedCapacity updated,0 -> 2,2
+05:46 PM - 05:47 PM,2026-03-17T11:46:00Z,2026-03-17T11:47:00Z,Load normalised,<15.0,Traffic test terminated by user,2,2
+05:48 PM,2026-03-17T11:48:00Z,,Cost scale-in,0.20,Phase 1: DesiredCapacity reduced,2 -> 0,2 -> 1
+05:50 PM+,2026-03-17T11:50:00Z,,Baseline restored,0.20,Standby (cost optimised),0,1

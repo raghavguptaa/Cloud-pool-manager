@@ -1,0 +1,7 @@
+event,time_utc,time_ist,delta
+Baseline CPU (idle state),2026-03-16T18:55:00Z,2026-03-17T00:25:00+05:30,-
+CPU spike (load test initiated),2026-03-16T19:00:00Z,2026-03-17T00:30:00+05:30,+5m00s from baseline
+CloudWatch alarm triggered (>50%),2026-03-16T19:04:36Z,2026-03-17T00:34:36+05:30,+4m36s from spike start
+Warm pool instance extracted,2026-03-16T19:04:42Z,2026-03-17T00:34:42+05:30,+6s from alarm
+Instance InService (webserver ready),2026-03-16T19:04:43Z,2026-03-17T00:34:43+05:30,+1s (warm start mitigated)
+Load test terminated,2026-03-16T19:05:00Z,2026-03-17T00:35:00+05:30,-

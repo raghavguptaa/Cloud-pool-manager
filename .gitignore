@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+tfplan
+.terraform.tfstate.lock.info
+
+# Lambda build artifacts
+lambda_package/
+*.zip
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

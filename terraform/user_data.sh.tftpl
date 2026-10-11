@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+# Runs once, on an instance's first boot. A warm pool instance runs this and is then stopped;
+# restarting it from the pool does not run it again. That asymmetry is the entire mechanism --
+# the warm pool moves this script off the scale-out critical path.
+
+# Simulated application boot time.
+#
+# This looks like a mistake and is not. A bare httpd install is serving in about two seconds,
+# which would make cold start almost free and the comparison meaningless. Real services spend
+# minutes on dependency wiring, cache loading, schema checks and JIT warmup before they can
+# answer a request, and that is the cost a warm pool buys back. The delay stands in for that
+# work, and it is the first number to change to model a different application.
+#
+# The Auto Scaling group's health check grace period is derived from this value, so raising it
+# here does not need a matching edit there.
+sleep ${boot_delay_seconds}
+
+dnf install -y httpd
+
+# Serve the instance id, so a browser refresh shows which member of the fleet answered. It is
+# the fastest way to watch a warm pool instance take over from a cold one during a spike.
+# Fetched over IMDSv2, because the launch template refuses IMDSv1.
+TOKEN=$(curl -sS -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+INSTANCE_ID=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/meta-data/instance-id")
+printf '%s %s\n' "${name_prefix}" "$INSTANCE_ID" > /var/www/html/index.html
+
+systemctl enable --now httpd

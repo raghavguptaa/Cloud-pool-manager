@@ -1,0 +1,96 @@
+# Every job below runs with no AWS credentials configured. There are no repository
+# secrets, no OIDC role, no `aws-actions/configure-aws-credentials` step. That absence is
+# the point: it is the proof that the controller's logic, the telemetry replay, the cost
+# model and the Terraform can all be checked without an account, which is the only reason
+# this repository is still verifiable after the account it was built in was closed.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # 3.13 is the runtime the Lambda is deployed on, so CI runs the same interpreter
+      # the deployed function does rather than whatever the runner ships by default.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: make lint
+
+      # FSM boundaries, the boto3 adapter against moto, the cost model, and the replay
+      # pinned to the 2026-03-17 capture. That last group is the one that matters: it
+      # fails if the implementation ever stops reproducing the behaviour actually
+      # observed on AWS.
+      - name: Test
+        run: make test
+
+      - name: Replay the captured telemetry
+        run: make sim
+
+      - name: Cost model
+        run: make finops
+
+      # The figures are regenerated from data/ on every run. They are committed too, so
+      # the artifact is here to compare against the committed copy by eye when a change
+      # is meant to alter them. Byte-equality is asserted inside the test suite, against
+      # one toolchain; it is not asserted across runners, where a different matplotlib or
+      # freetype build legitimately renders different pixels.
+      - name: Upload regenerated figures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: figures
+          path: results/*.png
+          if-no-files-found: error
+
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.16.2"
+          terraform_wrapper: false
+
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: v0.64.0
+
+      - name: Install checkov
+        run: pip install checkov
+
+      - name: Format
+        run: make fmt
+
+      # `init -backend=false` resolves the providers without touching remote state, and
+      # `validate` type-checks the configuration against the real provider schema. Neither
+      # needs credentials. Nothing here runs `plan` or `apply`: a plan would call the AWS
+      # API, and this repository deliberately cannot.
+      - name: Validate, lint and scan
+        run: make validate

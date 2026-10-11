@@ -1,0 +1,102 @@
+{
+  "region": "ap-south-1",
+  "region_name": "Asia Pacific (Mumbai)",
+  "currency": "USD",
+  "disclaimer": "Published AWS list prices. Every figure the model derives from them is a PROJECTION, not metered spend -- no AWS bill was captured from the deployment these rates describe. Each rate below was transcribed by hand from the cited page on the cited date; this file does not phone home, so re-check a rate against its source before quoting the number anywhere it matters.",
+  "field_meanings": {
+    "value": "the rate itself, in the stated unit",
+    "unit": "what one unit of `value` buys -- the model multiplies usage by this",
+    "as_of": "the date this rate was last transcribed into this file, not the date AWS last changed it",
+    "source": "the AWS page the rate came from",
+    "source_path": "where on that page to find it, so a reader can check in one click"
+  },
+  "rates": {
+    "ec2_on_demand_t3_micro": {
+      "value": 0.0112,
+      "unit": "USD per instance-hour",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/ec2/pricing/on-demand/",
+      "source_path": "On-Demand Pricing -> Linux -> Region: Asia Pacific (Mumbai) -> t3.micro",
+      "note": "Linux/UNIX, shared tenancy, no Savings Plan or Reserved Instance. A stopped instance is not charged this rate -- that is the whole mechanism the warm pool trades on."
+    },
+    "ebs_gp3_storage": {
+      "value": 0.0912,
+      "unit": "USD per provisioned GB-month",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/ebs/pricing/",
+      "source_path": "Amazon EBS pricing -> Region: Asia Pacific (Mumbai) -> General Purpose SSD (gp3) -> Storage",
+      "note": "Billed on PROVISIONED size for as long as the volume exists, whether or not the instance it is attached to is running. This single line is why a permanently stopped warm pool still costs money."
+    },
+    "ebs_gp3_included_iops": {
+      "value": 3000,
+      "unit": "IOPS included per volume at no additional charge",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/ebs/pricing/",
+      "source_path": "Amazon EBS pricing -> General Purpose SSD (gp3) -> IOPS (3,000 IOPS free)",
+      "note": "The model provisions no IOPS above this baseline, so the gp3 IOPS charge is exactly zero and the storage line reduces to GB-months."
+    },
+    "ebs_gp3_included_throughput": {
+      "value": 125,
+      "unit": "MB/s included per volume at no additional charge",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/ebs/pricing/",
+      "source_path": "Amazon EBS pricing -> General Purpose SSD (gp3) -> Throughput (125 MB/s free)",
+      "note": "As above: nothing is provisioned beyond the baseline, so the throughput charge is zero."
+    },
+    "public_ipv4_in_use": {
+      "value": 0.005,
+      "unit": "USD per in-use public IPv4 address-hour",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/vpc/pricing/",
+      "source_path": "Amazon VPC pricing -> Public IPv4 Address -> In-use Public IPv4 Address",
+      "note": "Charged in every region since 1 Feb 2024. Modelled but DISABLED by default: at $3.65 per address-month, three public addresses would add $10.95/month and dominate the comparison. The default assumes instances behind a load balancer or NAT with no address of their own. Flip it on with --public-ipv4 to see what a public-subnet deployment really costs."
+    },
+    "lambda_requests": {
+      "value": 0.20,
+      "unit": "USD per 1,000,000 requests",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/lambda/pricing/",
+      "source_path": "AWS Lambda pricing -> Region: Asia Pacific (Mumbai) -> Requests",
+      "note": "Gross of the perpetual free tier (1M requests/month), which would zero this line in practice. The model charges it anyway so the controller is never free by accounting trick."
+    },
+    "lambda_gb_second": {
+      "value": 0.0000166667,
+      "unit": "USD per GB-second (x86)",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/lambda/pricing/",
+      "source_path": "AWS Lambda pricing -> Region: Asia Pacific (Mumbai) -> Duration -> x86 price, first 6 billion GB-seconds/month",
+      "note": "Gross of the perpetual free tier (400,000 GB-seconds/month), for the same reason as above."
+    },
+    "cloudwatch_get_metric_data": {
+      "value": 0.01,
+      "unit": "USD per 1,000 metrics requested",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/cloudwatch/pricing/",
+      "source_path": "Amazon CloudWatch pricing -> Region: Asia Pacific (Mumbai) -> API -> GetMetricData",
+      "note": "Billed per METRIC requested, not per API call, and explicitly excluded from the CloudWatch free tier's 1M free API requests. At a 60-second poll this is the controller's largest line item -- larger than the Lambda it runs in."
+    },
+    "cloudwatch_detailed_monitoring_metric": {
+      "value": 0.30,
+      "unit": "USD per metric-month (first 10,000 metrics)",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/cloudwatch/pricing/",
+      "source_path": "Amazon CloudWatch pricing -> Region: Asia Pacific (Mumbai) -> Metrics -> First 10,000 metrics",
+      "note": "EC2 detailed (1-minute) monitoring publishes 7 metrics per instance, i.e. $2.10 per instance-month at list price. The governor arm needs it -- a 60-second control loop cannot run on 5-minute basic monitoring."
+    },
+    "cloudwatch_free_tier_metrics": {
+      "value": 10,
+      "unit": "detailed-monitoring metrics included per account per month at no charge",
+      "as_of": "2026-09-16",
+      "source": "https://aws.amazon.com/cloudwatch/pricing/",
+      "source_path": "Amazon CloudWatch pricing -> Free Tier -> 10 Detailed Monitoring Metrics",
+      "note": "Ten free metrics covers exactly one detailed-monitored instance (7 metrics) with three to spare, which is why the governor's steady state pays nothing for detailed monitoring and only the second instance in MITIGATE can push past the allowance."
+    }
+  },
+  "unmodelled_costs": [
+    "EBS snapshots and AMI storage -- the launch template's AMI has a real, small monthly cost that depends on image size and snapshot history.",
+    "Data transfer, NAT Gateway hours and processing -- entirely workload-dependent and identical across the three scenarios, so including them would move all three totals by the same amount and change no comparison.",
+    "T3 unlimited-mode CPU credit surcharges -- a t3.micro sustaining >10% CPU burns credits and is billed $0.05 per vCPU-hour beyond them. The captured run peaked at ~50% for three minutes, well inside the baseline credit accrual, so this is zero here and would not be for a sustained workload.",
+    "CloudWatch Logs ingestion and storage for the Lambda's own output -- a few MB/month at the log level this controller runs at.",
+    "Auto Scaling itself, which is free, and the Lambda's IAM role, which is free."
+  ]
+}

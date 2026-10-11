@@ -1,0 +1,8 @@
+Id,m1
+StatusCode,Complete
+Messages,
+Full label,ap-south-1:AWS/EC2 InstanceId:i-0c2bd98fd191bf1fb CPUUtilization Average 300
+Label,CPUUtilization
+2026/03/16 18:55:00,10.17917235266829
+2026/03/16 19:00:00,48.30297762606763
+2026/03/16 19:05:00,0.5297086578655105
